@@ -104,6 +104,7 @@
             border-radius: 8px;
             overflow: visible;
             flex-grow: 1;
+            cursor: pointer;
         }
         .slider-fill {
             position: absolute;
@@ -272,7 +273,7 @@
                             <input type="number" class="value-input" id="input-${index}" min="0" max="100" value="0">
                             <span class="value-input-percent">%</span>
                         </div>
-                        <div class="slider-container">
+                        <div class="slider-container" id="slider-container-${index}">
                             <div class="slider-fill" id="fill-${index}"></div>
                             <input type="range" id="slider-${index}" min="0" max="100" value="0" step="1" class="slider-input">
                             <div class="slider-value" id="value-${index}"></div>
@@ -284,8 +285,12 @@
                 `;
                 dimensionsContainer.appendChild(dimensionDiv);
 
+                const sliderContainer = document.getElementById(`slider-container-${index}`);
                 const slider = document.getElementById(`slider-${index}`);
                 const input = document.getElementById(`input-${index}`);
+                if (sliderContainer) {
+                    sliderContainer.addEventListener('click', (event) => handleSliderClick(event, index));
+                }
                 if (slider) {
                     slider.addEventListener('input', (event) => handleSliderInput(event, index));
                 }
@@ -352,6 +357,20 @@
                 allocations[index] = currentValue;
                 updateAllocations();
             }
+        }
+
+        function handleSliderClick(event, index) {
+            const sliderContainer = event.currentTarget;
+            const rect = sliderContainer.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const percentage = (x / rect.width) * 100;
+            
+            const otherTotal = allocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
+            const maxAllowed = 100 - otherTotal;
+            const newValue = Math.min(Math.round(percentage), maxAllowed);
+
+            allocations[index] = newValue;
+            updateAllocations();
         }
 
         shuffleArray(dimensions);
