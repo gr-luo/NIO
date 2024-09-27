@@ -104,6 +104,7 @@
             border-radius: 8px;
             overflow: visible;
             flex-grow: 1;
+            touch-action: none; /* 防止触摸设备的默认行为 */
         }
         .slider-fill {
             position: absolute;
@@ -120,6 +121,22 @@
             opacity: 0;
             cursor: pointer;
             z-index: 2; /* 确保滑块在最上层 */
+            -webkit-appearance: none; /* 移除默认样式 */
+            appearance: none;
+        }
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 40px; /* 增大点击区域 */
+            height: 40px;
+            background: transparent;
+            cursor: pointer;
+        }
+        .slider-input::-moz-range-thumb {
+            width: 40px; /* 增大点击区域 */
+            height: 40px;
+            background: transparent;
+            cursor: pointer;
+            border: none;
         }
         .slider-marks {
             position: absolute;
@@ -272,6 +289,9 @@
                 const input = document.getElementById(`input-${index}`);
                 if (slider) {
                     slider.addEventListener('input', (event) => handleSliderInput(event, index));
+                    slider.addEventListener('touchstart', handleTouchStart);
+                    slider.addEventListener('touchmove', handleTouchMove);
+                    slider.addEventListener('touchend', handleTouchEnd);
                 }
                 if (input) {
                     input.addEventListener('input', (event) => handleInputChange(event, index));
@@ -341,6 +361,28 @@
                 slider.value = currentValue;
                 handleSliderInput({target: slider}, index);
             }
+        }
+
+        function handleTouchStart(event) {
+            event.preventDefault();
+            updateSliderValue(event.touches[0], this);
+        }
+
+        function handleTouchMove(event) {
+            event.preventDefault();
+            updateSliderValue(event.touches[0], this);
+        }
+
+        function handleTouchEnd(event) {
+            event.preventDefault();
+        }
+
+        function updateSliderValue(touch, slider) {
+            const rect = slider.getBoundingClientRect();
+            const position = touch.clientX - rect.left;
+            const percentage = Math.max(0, Math.min(100, (position / rect.width) * 100));
+            slider.value = Math.round(percentage);
+            handleSliderInput({target: slider}, Array.from(slider.parentNode.parentNode.parentNode.children).indexOf(slider.parentNode.parentNode));
         }
 
         shuffleArray(dimensions);
