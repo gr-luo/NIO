@@ -148,7 +148,7 @@
             padding: 0 10px;
             box-sizing: border-box;
             pointer-events: none;
-            z-index: 1; /* 确保刻度在填充之上但在滑块之下 */
+            z-index: 1; /* 确保刻度在填充之���但在滑块之下 */
         }
         .slider-tick {
             width: 1px;
@@ -213,7 +213,7 @@
             },
             {
                 name: "车内空间与环境舒适性",
-                description: "乘坐空间/座椅布局/视野，以及气味/空调/静谧等多感官舒适"
+                description: "乘坐空间/座椅布局/视���，以及气味/空调/静谧等多感官舒适"
             },
             {
                 name: "智能座舱",
@@ -289,10 +289,8 @@
                 const slider = document.getElementById(`slider-${index}`);
                 const input = document.getElementById(`input-${index}`);
                 if (sliderContainer) {
-                    sliderContainer.addEventListener('click', (event) => handleSliderClick(event, index));
-                }
-                if (slider) {
-                    slider.addEventListener('input', (event) => handleSliderInput(event, index));
+                    sliderContainer.addEventListener('mousedown', (event) => handleSliderMouseDown(event, index));
+                    sliderContainer.addEventListener('touchstart', (event) => handleSliderTouchStart(event, index));
                 }
                 if (input) {
                     input.addEventListener('input', (event) => handleInputChange(event, index));
@@ -342,12 +340,46 @@
             });
         }
 
-        function handleSliderInput(event, index) {
-            const currentValue = parseInt(event.target.value);
+        function handleSliderMouseDown(event, index) {
+            event.preventDefault();
+            const sliderContainer = event.currentTarget;
+            const handleSliderMove = (moveEvent) => {
+                updateSliderValue(moveEvent, sliderContainer, index);
+            };
+            const handleSliderUp = () => {
+                document.removeEventListener('mousemove', handleSliderMove);
+                document.removeEventListener('mouseup', handleSliderUp);
+            };
+            document.addEventListener('mousemove', handleSliderMove);
+            document.addEventListener('mouseup', handleSliderUp);
+            updateSliderValue(event, sliderContainer, index);
+        }
+
+        function handleSliderTouchStart(event, index) {
+            event.preventDefault();
+            const sliderContainer = event.currentTarget;
+            const handleSliderMove = (moveEvent) => {
+                updateSliderValue(moveEvent.touches[0], sliderContainer, index);
+            };
+            const handleSliderEnd = () => {
+                document.removeEventListener('touchmove', handleSliderMove);
+                document.removeEventListener('touchend', handleSliderEnd);
+            };
+            document.addEventListener('touchmove', handleSliderMove);
+            document.addEventListener('touchend', handleSliderEnd);
+            updateSliderValue(event.touches[0], sliderContainer, index);
+        }
+
+        function updateSliderValue(event, sliderContainer, index) {
+            const rect = sliderContainer.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+            
             const otherTotal = allocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
             const maxAllowed = 100 - otherTotal;
+            const newValue = Math.min(Math.round(percentage), maxAllowed);
 
-            allocations[index] = Math.min(currentValue, maxAllowed);
+            allocations[index] = newValue;
             updateAllocations();
         }
 
@@ -357,20 +389,6 @@
                 allocations[index] = currentValue;
                 updateAllocations();
             }
-        }
-
-        function handleSliderClick(event, index) {
-            const sliderContainer = event.currentTarget;
-            const rect = sliderContainer.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const percentage = (x / rect.width) * 100;
-            
-            const otherTotal = allocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
-            const maxAllowed = 100 - otherTotal;
-            const newValue = Math.min(Math.round(percentage), maxAllowed);
-
-            allocations[index] = newValue;
-            updateAllocations();
         }
 
         shuffleArray(dimensions);
