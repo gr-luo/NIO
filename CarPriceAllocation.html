@@ -380,9 +380,21 @@
         function updateSliderValue(touch, slider) {
             const rect = slider.getBoundingClientRect();
             const position = touch.clientX - rect.left;
-            const percentage = Math.max(0, Math.min(100, (position / rect.width) * 100));
+            let percentage = Math.max(0, Math.min(100, (position / rect.width) * 100));
+            
+            // 获取当前滑块的索引
+            const index = Array.from(slider.parentNode.parentNode.parentNode.children).indexOf(slider.parentNode.parentNode);
+            
+            // 计算其他滑块的总和
+            const otherTotal = allocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
+            
+            // 确保新的值不会使总和超过100%
+            percentage = Math.min(percentage, 100 - otherTotal);
+            
             slider.value = Math.round(percentage);
-            handleSliderInput({target: slider}, Array.from(slider.parentNode.parentNode.parentNode.children).indexOf(slider.parentNode.parentNode));
+            allocations[index] = Math.round(percentage);
+            
+            handleSliderInput({target: slider}, index);
         }
 
         shuffleArray(dimensions);
