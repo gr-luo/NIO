@@ -105,6 +105,10 @@
             overflow: visible;
             flex-grow: 1;
             cursor: pointer;
+            z-index: 3; /* 确保在最上层 */
+        }
+        .slider-input {
+            display: none; /* 隐藏原生滑块 */
         }
         .slider-fill {
             position: absolute;
@@ -113,30 +117,6 @@
             border-radius: 8px 0 0 8px;
             transition: width 0.3s ease;
             pointer-events: none; /* 确保填充不会阻挡点击 */
-        }
-        .slider-input {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-            z-index: 2; /* 确保滑块在最上层 */
-            -webkit-appearance: none; /* 移除默认样式 */
-            appearance: none;
-        }
-        .slider-input::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 40px; /* 增大点击区域 */
-            height: 40px;
-            background: transparent;
-            cursor: pointer;
-        }
-        .slider-input::-moz-range-thumb {
-            width: 40px; /* 增大点击区域 */
-            height: 40px;
-            background: transparent;
-            cursor: pointer;
-            border: none;
         }
         .slider-marks {
             position: absolute;
@@ -148,7 +128,7 @@
             padding: 0 10px;
             box-sizing: border-box;
             pointer-events: none;
-            z-index: 1; /* 确保刻度在填充之���但在滑块之下 */
+            z-index: 1; /* 确保刻度在填充之但在滑块之下 */
         }
         .slider-tick {
             width: 1px;
@@ -213,7 +193,7 @@
             },
             {
                 name: "车内空间与环境舒适性",
-                description: "乘坐空间/座椅布局/视���，以及气味/空调/静谧等多感官舒适"
+                description: "乘坐空间/座椅布局/视，以及气味/空调/静谧等多感官舒适"
             },
             {
                 name: "智能座舱",
@@ -289,8 +269,8 @@
                 const slider = document.getElementById(`slider-${index}`);
                 const input = document.getElementById(`input-${index}`);
                 if (sliderContainer) {
-                    sliderContainer.addEventListener('mousedown', (event) => handleSliderMouseDown(event, index));
-                    sliderContainer.addEventListener('touchstart', (event) => handleSliderTouchStart(event, index));
+                    sliderContainer.addEventListener('mousedown', (event) => handleSliderStart(event, index));
+                    sliderContainer.addEventListener('touchstart', (event) => handleSliderStart(event, index));
                 }
                 if (input) {
                     input.addEventListener('input', (event) => handleInputChange(event, index));
@@ -340,39 +320,29 @@
             });
         }
 
-        function handleSliderMouseDown(event, index) {
+        function handleSliderStart(event, index) {
             event.preventDefault();
             const sliderContainer = event.currentTarget;
-            const handleSliderMove = (moveEvent) => {
-                updateSliderValue(moveEvent, sliderContainer, index);
+            const handleMove = (moveEvent) => {
+                moveEvent.preventDefault();
+                updateSliderValue(moveEvent.type.includes('touch') ? moveEvent.touches[0] : moveEvent, sliderContainer, index);
             };
-            const handleSliderUp = () => {
-                document.removeEventListener('mousemove', handleSliderMove);
-                document.removeEventListener('mouseup', handleSliderUp);
+            const handleEnd = () => {
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('touchmove', handleMove);
+                document.removeEventListener('mouseup', handleEnd);
+                document.removeEventListener('touchend', handleEnd);
             };
-            document.addEventListener('mousemove', handleSliderMove);
-            document.addEventListener('mouseup', handleSliderUp);
-            updateSliderValue(event, sliderContainer, index);
-        }
-
-        function handleSliderTouchStart(event, index) {
-            event.preventDefault();
-            const sliderContainer = event.currentTarget;
-            const handleSliderMove = (moveEvent) => {
-                updateSliderValue(moveEvent.touches[0], sliderContainer, index);
-            };
-            const handleSliderEnd = () => {
-                document.removeEventListener('touchmove', handleSliderMove);
-                document.removeEventListener('touchend', handleSliderEnd);
-            };
-            document.addEventListener('touchmove', handleSliderMove);
-            document.addEventListener('touchend', handleSliderEnd);
-            updateSliderValue(event.touches[0], sliderContainer, index);
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('touchmove', handleMove);
+            document.addEventListener('mouseup', handleEnd);
+            document.addEventListener('touchend', handleEnd);
+            updateSliderValue(event.type.includes('touch') ? event.touches[0] : event, sliderContainer, index);
         }
 
         function updateSliderValue(event, sliderContainer, index) {
             const rect = sliderContainer.getBoundingClientRect();
-            const x = event.clientX - rect.left;
+            const x = (event.clientX || event.pageX) - rect.left;
             const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
             
             const otherTotal = allocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
