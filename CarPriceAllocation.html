@@ -104,7 +104,6 @@
             border-radius: 8px;
             overflow: visible;
             flex-grow: 1;
-            touch-action: none; /* 防止触摸设备的默认行为 */
         }
         .slider-fill {
             position: absolute;
@@ -289,9 +288,6 @@
                 const input = document.getElementById(`input-${index}`);
                 if (slider) {
                     slider.addEventListener('input', (event) => handleSliderInput(event, index));
-                    slider.addEventListener('touchstart', handleTouchStart);
-                    slider.addEventListener('touchmove', handleTouchMove);
-                    slider.addEventListener('touchend', handleTouchEnd);
                 }
                 if (input) {
                     input.addEventListener('input', (event) => handleInputChange(event, index));
@@ -302,7 +298,6 @@
         function updateAllocations() {
             let total = allocations.reduce((sum, value) => sum + value, 0);
             
-            // 如果总和超过100%，按比例缩减所有值
             if (total > 100) {
                 const scale = 100 / total;
                 allocations = allocations.map(value => Math.round(value * scale));
@@ -347,59 +342,16 @@
             const otherTotal = allocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
             const maxAllowed = 100 - otherTotal;
 
-            if (currentValue > maxAllowed) {
-                event.target.value = maxAllowed;
-            }
-
-            allocations[index] = parseInt(event.target.value);
+            allocations[index] = Math.min(currentValue, maxAllowed);
             updateAllocations();
         }
 
         function handleInputChange(event, index) {
             const currentValue = parseInt(event.target.value);
-            const slider = document.getElementById(`slider-${index}`);
-            
             if (currentValue >= 0 && currentValue <= 100) {
-                slider.value = currentValue;
-                handleSliderInput({target: slider}, index);
+                allocations[index] = currentValue;
+                updateAllocations();
             }
-        }
-
-        function handleTouchStart(event) {
-            event.preventDefault();
-            updateSliderValue(event.touches[0], this);
-        }
-
-        function handleTouchMove(event) {
-            event.preventDefault();
-            updateSliderValue(event.touches[0], this);
-        }
-
-        function handleTouchEnd(event) {
-            event.preventDefault();
-        }
-
-        function updateSliderValue(touch, slider) {
-            const rect = slider.getBoundingClientRect();
-            const position = touch.clientX - rect.left;
-            let percentage = Math.max(0, Math.min(100, (position / rect.width) * 100));
-            
-            // 获取当前滑块的索引
-            const index = Array.from(slider.parentNode.parentNode.parentNode.children).indexOf(slider.parentNode.parentNode);
-            
-            // 计算当前总和（不包括当前滑块）
-            const currentTotal = allocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
-            
-            // 确保新的值不会使总和超过100%
-            const maxAllowed = 100 - currentTotal;
-            percentage = Math.min(percentage, maxAllowed);
-            
-            // 更新当前滑块的值
-            slider.value = Math.round(percentage);
-            allocations[index] = Math.round(percentage);
-            
-            // 更新所有滑块的状态
-            updateAllocations();
         }
 
         shuffleArray(dimensions);
