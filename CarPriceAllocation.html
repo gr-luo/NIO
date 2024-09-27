@@ -389,12 +389,14 @@
             const otherTotal = allocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
             
             // 确保新的值不会使总和超过100%
-            percentage = Math.min(percentage, 100 - otherTotal);
+            const maxAllowed = 100 - otherTotal;
+            percentage = Math.min(percentage, maxAllowed);
             
             slider.value = Math.round(percentage);
             allocations[index] = Math.round(percentage);
             
-            handleSliderInput({target: slider}, index);
+            // 更新所有滑块的状态
+            updateAllocations();
         }
 
         shuffleArray(dimensions);
