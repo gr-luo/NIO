@@ -111,6 +111,7 @@
             background-color: #4fd1c5;
             border-radius: 8px 0 0 8px;
             transition: width 0.3s ease;
+            pointer-events: none; /* 确保填充不会阻挡点击 */
         }
         .slider-input {
             position: absolute;
@@ -118,6 +119,7 @@
             height: 100%;
             opacity: 0;
             cursor: pointer;
+            z-index: 2; /* 确保滑块在最上层 */
         }
         .slider-marks {
             position: absolute;
@@ -129,6 +131,7 @@
             padding: 0 10px;
             box-sizing: border-box;
             pointer-events: none;
+            z-index: 1; /* 确保刻度在填充之上但在滑块之下 */
         }
         .slider-tick {
             width: 1px;
@@ -143,6 +146,8 @@
             transform: translateY(-50%);
             color: #333;
             font-size: 12px;
+            pointer-events: none; /* 确保值显示不会阻挡点击 */
+            z-index: 3; /* 确保值显示在最上层 */
         }
         #allocation-page {
             display: none;
