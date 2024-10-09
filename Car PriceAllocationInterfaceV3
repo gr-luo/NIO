@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车型选择与价值分配</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 10px; 
+        }
+
+        h1 + h1 {
+            margin-top: 0; 
+        }
+
+        .allocation-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1em;
+            color: #333;
+        }
+        .car-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .car-option {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .car-option:hover {
+            background-color: #f0f0f0;
+        }
+        .dimension {
+            height: 70px; /* 降低固定高度 */
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .dimension-info {
+            flex: 3;
+            margin-right: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+        }
+        .slider-wrapper {
+            flex: 7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 40px;
+        }
+        .dimension-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        .dimension-description {
+            font-size: 0.8em;
+            color: #666;
+            line-height: 1.4;
+        }
+        .slider-container {
+            position: relative;
+            height: 40px;
+            background-color: #f1f1f1;
+            border-radius: 8px;
+            overflow: visible;
+            flex-grow: 1;
+            cursor: pointer;
+            z-index: 3;
+        }
+        .slider-input {
+            display: none;
+        }
+        .slider-fill {
+            position: absolute;
+            height: 100%;
+            background-color: #00BEBE;
+            border-radius: 8px 0 0 8px;
+            transition: width 0.3s ease;
+            pointer-events: none;
+        }
+        .slider-remaining {
+            position: absolute;
+            height: 100%;
+            background-color: #00bebe22;
+            border-radius: 8px 8px 8px 8px;
+            transition: width 0.3s ease, left 0.3s ease;
+            pointer-events: none;
+        }
+        .slider-marks {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 10px;
+            box-sizing: border-box;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .slider-tick {
+            width: 1px;
+            height: 5px;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        .slider-value {
+            position: absolute;
+            font-weight: bold;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #333;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 3;
+        }
+        #allocation-page {
+            display: none;
+        }
+        
+        /* 添加排序页面的样式 */
+        #sorting-page {
+            display: none;
+        }
+        .sortable-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .sortable-item {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            transition: transform 0.3s ease;
+        }
+        .sortable-item:hover {
+            background-color: #e9e9e9;
+        }
+        .sortable-item.dragging {
+            opacity: 0.5;
+            background-color: #e0e0e0;
+        }
+        .sortable-item .drag-icon {
+            margin-right: 10px;
+            color: #888;
+        }
+        .sortable-item .dimension-name {
+            font-weight: bold;
+        }
+        .sortable-item .dimension-description {
+            font-size: 0.9em;
+            color: #666;
+            margin-left: 10px;
+        }
+        .continue-button, .back-button {
+            display: inline-block;
+            width: 48%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .continue-button {
+            background-color: #00BEBE;
+            color: white;
+        }
+        .continue-button:hover {
+            background-color: #00BEBE;
+        }
+        .back-button {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .back-button:hover {
+            background-color: #e0e0e0;
+        }
+        .highlight {
+            color: #00BEBE;
+            font-weight: bold;
+        }
+        .adjust-button {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 16px;
+            user-select: none;
+        }
+        .adjust-button:hover {
+            background-color: #e9e9e9;
+        }
+        
+        .container {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="selection-page">
+            <h1>选择您当前的车型</h1>
+            <div class="car-grid">
+                <div class="car-option" data-model="ET5" data-price="30">ET5</div>
+                <div class="car-option" data-model="ET5T" data-price="30">ET5T</div>
+                <div class="car-option" data-model="ES6" data-price="35">ES6</div>
+                <div class="car-option" data-model="EC6" data-price="35">EC6</div>
+                <div class="car-option" data-model="ET7" data-price="45">ET7</div>
+                <div class="car-option" data-model="ES7" data-price="50">ES7</div>
+                <div class="car-option" data-model="EC7" data-price="55">EC7</div>
+                <div class="car-option" data-model="ES8" data-price="60">ES8</div>
+            </div>
+        </div>
+
+        <!-- 新增品牌、产品、服务分配页面 -->
+        <div id="brand-product-service-page" style="display: none;">
+            <h1>购买 <span id="selected-model-bps"></span> 时，你认为这台车在</h1>
+            <h1>品牌、产品、服务的价值占比分别是</h1>
+            <div class="allocation-info">
+                剩余可分配比例：<span id="remaining-bps">100</span>%
+            </div>
+            <div id="bps-dimensions"></div>
+            <div class="button-container">
+                <button class="back-button" onclick="goBack('brand-product-service-page')">返回上一步</button>
+                <button id="continue-to-sorting" class="continue-button">继续</button>
+            </div>
+        </div>
+
+        <!-- 新增排序页面 -->
+        <div id="sorting-page" style="display: none;">
+            <h1>对于这辆车的所有产品维度</h1>
+            <h1>你认为以下哪些维度<span class="highlight">价值更高</span>（愿意支付更多钱）</h1>
+            <ul id="sortable-dimensions" class="sortable-list"></ul>
+            <div class="button-container">
+                <button class="back-button" onclick="goBack('sorting-page')">返回上一步</button>
+                <button id="continue-to-allocation" class="continue-button">继续</button>
+            </div>
+        </div>
+
+        <div id="allocation-page" style="display: none;">
+            <h1>你认为 <span id="selected-model"></span> 在以下产品各个维度的价值占比分别是</h1>
+            <div class="allocation-info">
+                剩余可分配比例：<span id="remaining">100</span>%
+            </div>
+            <div id="dimensions"></div>
+            <div class="button-container">
+                <button class="back-button" onclick="goBack('allocation-page')">返回上一步</button>
+                <button id="finish-allocation" class="continue-button">完成</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dimensions = [
+            {
+                name: "外观设计 & 外部功能件",
+                description: "造型、颜色、装饰件 、功能件（雨刮/大灯/把手等）"
+            },
+            {
+                name: "驾驶 & 乘坐体验",
+                description: "驾驶体验（加速/制动/转向）乘坐体验（座椅/底盘舒适）"
+            },
+            {
+                name: "内饰设计",
+                description: "内饰颜色、造型、材质、做工品质"
+            },
+            {
+                name: "车内空间与环境舒适性",
+                description: "空间（乘坐空间/视野/座椅布局）、多感官舒适（气味/空调/静谧）"
+            },
+            {
+                name: "智能座舱",
+                description: "车机软件、智能硬件（屏幕/HUD/音响/智能冰箱）"
+            },
+            {
+                name: "智能驾驶",
+                description: "高速/城区智能驾驶、智能泊车等"
+            },
+            {
+                name: "安全体验",
+                description: "紧急制动AEB、气囊/车身结构等"
+            },
+            {
+                name: "续航 & 补能体验",
+                description: "续航能耗、充电/换电体验等"
+            }
+        ];
+
+        let totalPrice = 30;
+        let allocations = new Array(dimensions.length).fill(0);
+
+        let bpsDimensions = [
+            { name: "品牌", description: "品牌价值和认可度" },
+            { name: "产品", description: "车辆本身的质量和性能" },
+            { name: "服务", description: "售前、售后服务体验" }
+        ];
+        let bpsAllocations = new Array(bpsDimensions.length).fill(0);
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function goBack(currentPage) {
+            document.getElementById(currentPage).style.display = 'none';
+            switch(currentPage) {
+                case 'brand-product-service-page':
+                    document.getElementById('selection-page').style.display = 'block';
+                    break;
+                case 'sorting-page':
+                    document.getElementById('brand-product-service-page').style.display = 'block';
+                    break;
+                case 'allocation-page':
+                    document.getElementById('sorting-page').style.display = 'block';
+                    break;
+            }
+        }
+
+        // 修改车型选择的点击事件处理
+        document.querySelectorAll('.car-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const model = this.dataset.model;
+                totalPrice = parseInt(this.dataset.price);
+                document.getElementById('selection-page').style.display = 'none';
+                document.getElementById('brand-product-service-page').style.display = 'block';
+                document.getElementById('selected-model-bps').textContent = model;
+                document.getElementById('selected-model').textContent = model;
+                renderBPSDimensions();
+            });
+        });
+
+        function renderBPSDimensions() {
+            const dimensionsContainer = document.getElementById('bps-dimensions');
+            dimensionsContainer.innerHTML = '';
+            bpsDimensions.forEach((dim, index) => {
+                const dimensionDiv = document.createElement('div');
+                dimensionDiv.className = 'dimension';
+                dimensionDiv.innerHTML = `
+                    <div class="dimension-info">
+                        <div class="dimension-name">${dim.name}</div>
+                        <div class="dimension-description">${dim.description}</div>
+                    </div>
+                    <div class="slider-wrapper">
+                        <div class="adjust-button" id="bps-minus-${index}">-</div>
+                        <div class="slider-container" id="bps-slider-container-${index}">
+                            <div class="slider-remaining" id="bps-remaining-${index}"></div>
+                            <div class="slider-fill" id="bps-fill-${index}"></div>
+                            <input type="range" id="bps-slider-${index}" min="0" max="100" value="0" step="1" class="slider-input">
+                            <div class="slider-value" id="bps-value-${index}"></div>
+                            <div class="slider-marks">
+                                ${Array(21).fill().map((_, i) => `<div class="slider-tick" style="height: ${i % 5 === 0 ? '10px' : '5px'}"></div>`).join('')}
+                            </div>
+                        </div>
+                        <div class="adjust-button" id="bps-plus-${index}">+</div>
+                    </div>
+                `;
+                dimensionsContainer.appendChild(dimensionDiv);
+
+                const sliderContainer = document.getElementById(`bps-slider-container-${index}`);
+                const minusButton = document.getElementById(`bps-minus-${index}`);
+                const plusButton = document.getElementById(`bps-plus-${index}`);
+
+                if (sliderContainer) {
+                    sliderContainer.addEventListener('mousedown', (event) => handleBPSSliderStart(event, index));
+                    sliderContainer.addEventListener('touchstart', (event) => handleBPSSliderStart(event, index));
+                }
+                if (minusButton) {
+                    minusButton.addEventListener('click', () => adjustBPSAllocation(index, -1));
+                }
+                if (plusButton) {
+                    plusButton.addEventListener('click', () => adjustBPSAllocation(index, 1));
+                }
+            });
+            updateBPSAllocations();
+        }
+
+        function adjustBPSAllocation(index, change) {
+            const currentValue = bpsAllocations[index];
+            const newValue = Math.max(0, Math.min(100, currentValue + change));
+            const totalAllocation = bpsAllocations.reduce((sum, value) => sum + value, 0);
+            
+            if (totalAllocation < 100 || (totalAllocation === 100 && change < 0)) {
+                bpsAllocations[index] = newValue;
+                updateBPSAllocations();
+            }
+        }
+
+        function updateBPSAllocations() {
+            let total = bpsAllocations.reduce((sum, value) => sum + value, 0);
+            let remaining = Math.max(0, 100 - total);
+
+            bpsDimensions.forEach((_, index) => {
+                const slider = document.getElementById(`bps-slider-${index}`);
+                const sliderFill = document.getElementById(`bps-fill-${index}`);
+                const sliderRemaining = document.getElementById(`bps-remaining-${index}`);
+                const sliderValue = document.getElementById(`bps-value-${index}`);
+                const minusButton = document.getElementById(`bps-minus-${index}`);
+                const plusButton = document.getElementById(`bps-plus-${index}`);
+
+                if (slider && sliderFill && sliderRemaining && sliderValue) {
+                    const value = bpsAllocations[index];
+                    slider.value = value;
+                    sliderFill.style.width = `${value}%`;
+                    sliderRemaining.style.left = `${value}%`;
+                    sliderRemaining.style.width = `${remaining}%`;
+                    if (value > 0) {
+                        sliderValue.textContent = `${value}%`;
+                        sliderValue.style.display = 'block';
+                    } else {
+                        sliderValue.style.display = 'none';
+                    }
+                }
+
+                if (minusButton) {
+                    minusButton.disabled = bpsAllocations[index] <= 0;
+                }
+                if (plusButton) {
+                    plusButton.disabled = total >= 100;
+                }
+            });
+
+            document.getElementById('remaining-bps').textContent = remaining;
+
+            const allAllocated = remaining === 0;
+            bpsDimensions.forEach((_, index) => {
+                const slider = document.getElementById(`bps-slider-${index}`);
+                if (slider) {
+                    slider.style.accentColor = allAllocated ? 'green' : 'red';
+                }
+            });
+
+            // 启用或禁用继续按钮
+            const continueButton = document.getElementById('continue-to-sorting');
+            if (continueButton) {
+                continueButton.disabled = remaining > 0;
+            }
+        }
+
+        function handleBPSSliderStart(event, index) {
+            event.preventDefault();
+            const sliderContainer = event.currentTarget;
+            const handleMove = (moveEvent) => handleBPSSliderValue(moveEvent.type.includes('touch') ? moveEvent.touches[0] : moveEvent, sliderContainer, index);
+            const handleEnd = () => {
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('touchmove', handleMove);
+                document.removeEventListener('mouseup', handleEnd);
+                document.removeEventListener('touchend', handleEnd);
+            };
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('touchmove', handleMove);
+            document.addEventListener('mouseup', handleEnd);
+            document.addEventListener('touchend', handleEnd);
+            handleBPSSliderValue(event.type.includes('touch') ? event.touches[0] : event, sliderContainer, index);
+        }
+
+        function handleBPSSliderValue(event, sliderContainer, index) {
+            const rect = sliderContainer.getBoundingClientRect();
+            const x = (event.clientX || event.pageX) - rect.left;
+            const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+            
+            const otherTotal = bpsAllocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
+            const maxAllowed = 100 - otherTotal;
+            const newValue = Math.min(Math.round(percentage), maxAllowed);
+
+            if (newValue <= maxAllowed) {
+                bpsAllocations[index] = newValue;
+                updateBPSAllocations();
+            }
+        }
+
+        // 添加继续按钮的点击事件
+        document.getElementById('continue-to-sorting').addEventListener('click', function() {
+            document.getElementById('brand-product-service-page').style.display = 'none';
+            document.getElementById('sorting-page').style.display = 'block';
+            renderSortableDimensions();
+        });
+
+        // 渲染可排序的维度列表
+        function renderSortableDimensions() {
+            const sortableList = document.getElementById('sortable-dimensions');
+            sortableList.innerHTML = '';
+            dimensions.forEach((dim, index) => {
+                const li = document.createElement('li');
+                li.className = 'sortable-item';
+                li.draggable = true;
+                li.dataset.index = index;
+                li.innerHTML = `
+                    <span class="drag-icon">&#8942;</span>
+                    <span class="dimension-name">${dim.name}</span>
+                    <span class="dimension-description">${dim.description}</span>
+                `;
+                sortableList.appendChild(li);
+            });
+            setupDragAndDrop();
+        }
+
+        // 设置拖拽排序功能
+        function setupDragAndDrop() {
+            const sortableList = document.getElementById('sortable-dimensions');
+            let draggedItem = null;
+            let placeholder = document.createElement('li');
+            placeholder.className = 'sortable-item placeholder';
+
+            sortableList.addEventListener('dragstart', function(e) {
+                draggedItem = e.target;
+                setTimeout(() => {
+                    e.target.classList.add('dragging');
+                    placeholder.style.height = `${draggedItem.offsetHeight}px`;
+                    draggedItem.parentNode.insertBefore(placeholder, draggedItem.nextSibling);
+                }, 0);
+            });
+
+            sortableList.addEventListener('dragend', function(e) {
+                e.target.classList.remove('dragging');
+                placeholder.parentNode.removeChild(placeholder);
+                draggedItem = null;
+            });
+
+            sortableList.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(sortableList, e.clientY);
+                if (afterElement == null) {
+                    sortableList.appendChild(placeholder);
+                } else {
+                    sortableList.insertBefore(placeholder, afterElement);
+                }
+            });
+
+            sortableList.addEventListener('drop', function(e) {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(sortableList, e.clientY);
+                if (afterElement == null) {
+                    sortableList.appendChild(draggedItem);
+                } else {
+                    sortableList.insertBefore(draggedItem, afterElement);
+                }
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.sortable-item:not(.dragging):not(.placeholder)')];
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+        }
+
+        // 修改继续到分配页面的点击事件
+        document.getElementById('continue-to-allocation').addEventListener('click', function() {
+            // 更新维度顺序
+            const newOrder = Array.from(document.getElementById('sortable-dimensions').children)
+                .map(item => parseInt(item.dataset.index));
+            dimensions = newOrder.map(index => dimensions[index]);
+            
+            // 切换到分配页面
+            document.getElementById('sorting-page').style.display = 'none';
+            document.getElementById('allocation-page').style.display = 'block';
+            renderDimensions();
+            updateAllocations();
+        });
+
+        function renderDimensions() {
+            const dimensionsContainer = document.getElementById('dimensions');
+            dimensionsContainer.innerHTML = '';
+            dimensions.forEach((dim, index) => {
+                const dimensionDiv = document.createElement('div');
+                dimensionDiv.className = 'dimension';
+                dimensionDiv.innerHTML = `
+                    <div class="dimension-info">
+                        <div class="dimension-name">${dim.name}</div>
+                        <div class="dimension-description">${dim.description}</div>
+                    </div>
+                    <div class="slider-wrapper">
+                        <div class="adjust-button" id="minus-${index}">-</div>
+                        <div class="slider-container" id="slider-container-${index}">
+                            <div class="slider-remaining" id="remaining-${index}"></div>
+                            <div class="slider-fill" id="fill-${index}"></div>
+                            <input type="range" id="slider-${index}" min="0" max="100" value="0" step="1" class="slider-input">
+                            <div class="slider-value" id="value-${index}"></div>
+                            <div class="slider-marks">
+                                ${Array(21).fill().map((_, i) => `<div class="slider-tick" style="height: ${i % 5 === 0 ? '10px' : '5px'}"></div>`).join('')}
+                            </div>
+                        </div>
+                        <div class="adjust-button" id="plus-${index}">+</div>
+                    </div>
+                `;
+                dimensionsContainer.appendChild(dimensionDiv);
+
+                const sliderContainer = document.getElementById(`slider-container-${index}`);
+                const minusButton = document.getElementById(`minus-${index}`);
+                const plusButton = document.getElementById(`plus-${index}`);
+
+                if (sliderContainer) {
+                    sliderContainer.addEventListener('mousedown', (event) => handleSliderStart(event, index));
+                    sliderContainer.addEventListener('touchstart', (event) => handleSliderStart(event, index));
+                }
+                if (minusButton) {
+                    minusButton.addEventListener('click', () => adjustAllocation(index, -1));
+                }
+                if (plusButton) {
+                    plusButton.addEventListener('click', () => adjustAllocation(index, 1));
+                }
+            });
+        }
+
+        function adjustAllocation(index, change) {
+            const currentValue = allocations[index];
+            const newValue = Math.max(0, Math.min(100, currentValue + change));
+            const totalAllocation = allocations.reduce((sum, value) => sum + value, 0);
+            
+            if (totalAllocation < 100 || (totalAllocation === 100 && change < 0)) {
+                allocations[index] = newValue;
+                updateAllocations();
+            }
+        }
+
+        function updateAllocations() {
+            let total = allocations.reduce((sum, value) => sum + value, 0);
+            let remaining = Math.max(0, 100 - total);
+
+            dimensions.forEach((_, index) => {
+                const slider = document.getElementById(`slider-${index}`);
+                const sliderFill = document.getElementById(`fill-${index}`);
+                const sliderRemaining = document.getElementById(`remaining-${index}`);
+                const sliderValue = document.getElementById(`value-${index}`);
+                const minusButton = document.getElementById(`minus-${index}`);
+                const plusButton = document.getElementById(`plus-${index}`);
+
+                if (slider && sliderFill && sliderRemaining && sliderValue) {
+                    const value = allocations[index];
+                    slider.value = value;
+                    sliderFill.style.width = `${value}%`;
+                    sliderRemaining.style.left = `${value}%`;
+                    sliderRemaining.style.width = `${remaining}%`;
+                    if (value > 0) {
+                        sliderValue.textContent = `${value}%`;
+                        sliderValue.style.display = 'block';
+                    } else {
+                        sliderValue.style.display = 'none';
+                    }
+                }
+
+                if (minusButton) {
+                    minusButton.disabled = allocations[index] <= 0;
+                }
+                if (plusButton) {
+                    plusButton.disabled = total >= 100;
+                }
+            });
+
+            document.getElementById('remaining').textContent = remaining;
+
+            const allAllocated = remaining === 0;
+            dimensions.forEach((_, index) => {
+                const slider = document.getElementById(`slider-${index}`);
+                if (slider) {
+                    slider.style.accentColor = allAllocated ? 'green' : 'red';
+                }
+            });
+        }
+
+        function handleSliderStart(event, index) {
+            event.preventDefault();
+            const sliderContainer = event.currentTarget;
+            const handleMove = (moveEvent) => handleSliderValue(moveEvent.type.includes('touch') ? moveEvent.touches[0] : moveEvent, sliderContainer, index);
+            const handleEnd = () => {
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('touchmove', handleMove);
+                document.removeEventListener('mouseup', handleEnd);
+                document.removeEventListener('touchend', handleEnd);
+            };
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('touchmove', handleMove);
+            document.addEventListener('mouseup', handleEnd);
+            document.addEventListener('touchend', handleEnd);
+            handleSliderValue(event.type.includes('touch') ? event.touches[0] : event, sliderContainer, index);
+        }
+
+        function handleSliderValue(event, sliderContainer, index) {
+            const rect = sliderContainer.getBoundingClientRect();
+            const x = (event.clientX || event.pageX) - rect.left;
+            const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+            
+            const otherTotal = allocations.reduce((sum, value, i) => i !== index ? sum + value : sum, 0);
+            const maxAllowed = 100 - otherTotal;
+            const newValue = Math.min(Math.round(percentage), maxAllowed);
+
+            if (newValue <= maxAllowed) {
+                allocations[index] = newValue;
+                updateAllocations();
+            }
+        }
+
+        shuffleArray(dimensions);
+
+        // 添加完成分配的点击事件
+        document.getElementById('finish-allocation').addEventListener('click', function() {
+            // 这里可以添加完成分配后的逻辑，比如显示结果或发送数据到服务器
+            alert('分配完成！');
+        });
+
+    </script>
+</body>
+</html>
