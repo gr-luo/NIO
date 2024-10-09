@@ -135,10 +135,10 @@
         .slider-value {
             position: absolute;
             font-weight: bold;
-            right: 10px;
+            left: 10px;
             top: 50%;
             transform: translateY(-50%);
-            color: #333;
+            color: #ffffff;
             font-size: 12px;
             pointer-events: none;
             z-index: 3;
@@ -158,12 +158,15 @@
         .sortable-item {
             background-color: #f9f9f9;
             border: 1px solid #ddd;
-            padding: 15px;
+            padding: 15px 15px 15px 36px; /* 增加左侧内边距以容纳编号 */
             margin-bottom: 10px;
+            border-radius: 8px;
             cursor: move;
             display: flex;
             align-items: center;
             transition: transform 0.3s ease;
+            position: relative;
+            touch-action: none; /* 防止触摸设备上的默认滚动行为 */
         }
         .sortable-item:hover {
             background-color: #e9e9e9;
@@ -173,7 +176,8 @@
             background-color: #e0e0e0;
         }
         .sortable-item .drag-icon {
-            margin-right: 10px;
+            position: absolute;
+            right: 16px;
             color: #888;
         }
         .sortable-item .dimension-name {
@@ -184,10 +188,18 @@
             color: #666;
             margin-left: 10px;
         }
+        .sortable-item .order-number {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            color: #00BEBE;
+        }
         .continue-button, .back-button {
             display: inline-block;
             width: 48%;
-            padding: 10px;
+            padding: 8px;
             border: none;
             border-radius: 5px;
             font-size: 16px;
@@ -243,6 +255,8 @@
             justify-content: space-between;
             margin-top: 20px;
         }
+        
+
     </style>
 </head>
 <body>
@@ -266,7 +280,7 @@
             <h1>购买 <span id="selected-model-bps"></span> 时，你认为这台车在</h1>
             <h1>品牌、产品、服务的价值占比分别是</h1>
             <div class="allocation-info">
-                剩余可分配比例：<span id="remaining-bps">100</span>%
+                剩余可分配比例：<span class="highlight" id="remaining-bps">100</span>%
             </div>
             <div id="bps-dimensions"></div>
             <div class="button-container">
@@ -278,7 +292,10 @@
         <!-- 新增排序页面 -->
         <div id="sorting-page" style="display: none;">
             <h1>对于这辆车的所有产品维度</h1>
-            <h1>你认为以下哪些维度<span class="highlight">价值更高</span>（愿意支付更多钱）</h1>
+            <h1>你认为以下哪些<span class="highlight">价值更高</span>（愿意支付更多费用）？</h1>
+            <div class="allocation-info">
+                拖动进行从高到低排序
+            </div>
             <ul id="sortable-dimensions" class="sortable-list"></ul>
             <div class="button-container">
                 <button class="back-button" onclick="goBack('sorting-page')">返回上一步</button>
@@ -289,7 +306,7 @@
         <div id="allocation-page" style="display: none;">
             <h1>你认为 <span id="selected-model"></span> 在以下产品各个维度的价值占比分别是</h1>
             <div class="allocation-info">
-                剩余可分配比例：<span id="remaining">100</span>%
+                剩余可分配比例：<span class="highlight" id="remaining">100</span>%
             </div>
             <div id="dimensions"></div>
             <div class="button-container">
@@ -339,9 +356,9 @@
         let allocations = new Array(dimensions.length).fill(0);
 
         let bpsDimensions = [
-            { name: "品牌", description: "品牌价值和认可度" },
-            { name: "产品", description: "车辆本身的质量和性能" },
-            { name: "服务", description: "售前、售后服务体验" }
+            { name: "品牌", description: "..." },
+            { name: "产品", description: "..." },
+            { name: "服务", description: "..." }
         ];
         let bpsAllocations = new Array(bpsDimensions.length).fill(0);
 
@@ -536,6 +553,7 @@
                 li.draggable = true;
                 li.dataset.index = index;
                 li.innerHTML = `
+                    <span class="order-number">${index + 1}</span>
                     <span class="drag-icon">&#8942;</span>
                     <span class="dimension-name">${dim.name}</span>
                     <span class="dimension-description">${dim.description}</span>
@@ -552,22 +570,33 @@
             let placeholder = document.createElement('li');
             placeholder.className = 'sortable-item placeholder';
 
-            sortableList.addEventListener('dragstart', function(e) {
+            sortableList.addEventListener('dragstart', handleDragStart);
+            sortableList.addEventListener('dragend', handleDragEnd);
+            sortableList.addEventListener('dragover', handleDragOver);
+            sortableList.addEventListener('drop', handleDrop);
+
+            // 添加触摸事件监听器
+            sortableList.addEventListener('touchstart', handleTouchStart, {passive: false});
+            sortableList.addEventListener('touchmove', handleTouchMove, {passive: false});
+            sortableList.addEventListener('touchend', handleTouchEnd);
+
+            function handleDragStart(e) {
                 draggedItem = e.target;
                 setTimeout(() => {
                     e.target.classList.add('dragging');
-                    placeholder.style.height = `${draggedItem.offsetHeight}px`;
+                    placeholder.style.height = `${draggedItem.offsetHeight - 32}px`;
                     draggedItem.parentNode.insertBefore(placeholder, draggedItem.nextSibling);
                 }, 0);
-            });
+            }
 
-            sortableList.addEventListener('dragend', function(e) {
+            function handleDragEnd(e) {
                 e.target.classList.remove('dragging');
                 placeholder.parentNode.removeChild(placeholder);
                 draggedItem = null;
-            });
+                updateOrder();
+            }
 
-            sortableList.addEventListener('dragover', function(e) {
+            function handleDragOver(e) {
                 e.preventDefault();
                 const afterElement = getDragAfterElement(sortableList, e.clientY);
                 if (afterElement == null) {
@@ -575,9 +604,9 @@
                 } else {
                     sortableList.insertBefore(placeholder, afterElement);
                 }
-            });
+            }
 
-            sortableList.addEventListener('drop', function(e) {
+            function handleDrop(e) {
                 e.preventDefault();
                 const afterElement = getDragAfterElement(sortableList, e.clientY);
                 if (afterElement == null) {
@@ -585,7 +614,53 @@
                 } else {
                     sortableList.insertBefore(draggedItem, afterElement);
                 }
-            });
+            }
+
+            function handleTouchStart(e) {
+                e.preventDefault(); // 防止滚动
+                const touch = e.touches[0];
+                draggedItem = e.target.closest('.sortable-item');
+                if (!draggedItem) return;
+
+                draggedItem.classList.add('dragging');
+                placeholder.style.height = `${draggedItem.offsetHeight - 32}px`;
+                draggedItem.parentNode.insertBefore(placeholder, draggedItem.nextSibling);
+
+                // 记录起始触摸位置
+                draggedItem.startY = touch.pageY - draggedItem.offsetTop;
+            }
+
+            function handleTouchMove(e) {
+                e.preventDefault(); // 防止滚动
+                if (!draggedItem) return;
+
+                const touch = e.touches[0];
+                const newY = touch.pageY - draggedItem.startY;
+                draggedItem.style.transform = `translateY(${newY}px)`;
+
+                const afterElement = getDragAfterElement(sortableList, touch.clientY);
+                if (afterElement == null) {
+                    sortableList.appendChild(placeholder);
+                } else {
+                    sortableList.insertBefore(placeholder, afterElement);
+                }
+            }
+
+            function handleTouchEnd(e) {
+                if (!draggedItem) return;
+
+                draggedItem.classList.remove('dragging');
+                draggedItem.style.transform = '';
+                const afterElement = placeholder.nextElementSibling;
+                if (afterElement) {
+                    sortableList.insertBefore(draggedItem, afterElement);
+                } else {
+                    sortableList.appendChild(draggedItem);
+                }
+                placeholder.parentNode.removeChild(placeholder);
+                draggedItem = null;
+                updateOrder();
+            }
 
             function getDragAfterElement(container, y) {
                 const draggableElements = [...container.querySelectorAll('.sortable-item:not(.dragging):not(.placeholder)')];
@@ -598,6 +673,16 @@
                         return closest;
                     }
                 }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            function updateOrder() {
+                const items = sortableList.querySelectorAll('.sortable-item');
+                items.forEach((item, index) => {
+                    const orderNumber = item.querySelector('.order-number');
+                    if (orderNumber) {
+                        orderNumber.textContent = index + 1;
+                    }
+                });
             }
         }
 
