@@ -623,11 +623,19 @@
                 if (!draggedItem) return;
 
                 draggedItem.classList.add('dragging');
-                placeholder.style.height = `${draggedItem.offsetHeight - 32}px`;
+                placeholder.style.height = `${draggedItem.offsetHeight}px`;
                 draggedItem.parentNode.insertBefore(placeholder, draggedItem.nextSibling);
 
-                // 记录起始触摸位置
-                draggedItem.startY = touch.pageY - draggedItem.offsetTop;
+                // 记录起始触摸位置和元素位置
+                draggedItem.startY = touch.pageY;
+                draggedItem.startTop = draggedItem.offsetTop;
+
+                // 将拖动的元素设置为绝对定位
+                draggedItem.style.position = 'absolute';
+                draggedItem.style.zIndex = '1000';
+                draggedItem.style.width = `${draggedItem.offsetWidth}px`;
+                draggedItem.style.top = `${draggedItem.startTop}px`;
+                sortableList.appendChild(draggedItem);
             }
 
             function handleTouchMove(e) {
@@ -635,8 +643,11 @@
                 if (!draggedItem) return;
 
                 const touch = e.touches[0];
-                const newY = touch.pageY - draggedItem.startY;
-                draggedItem.style.transform = `translateY(${newY}px)`;
+                const deltaY = touch.pageY - draggedItem.startY;
+                const newTop = draggedItem.startTop + deltaY;
+
+                // 更新拖动元素的位置
+                draggedItem.style.top = `${newTop}px`;
 
                 const afterElement = getDragAfterElement(sortableList, touch.clientY);
                 if (afterElement == null) {
@@ -650,7 +661,11 @@
                 if (!draggedItem) return;
 
                 draggedItem.classList.remove('dragging');
-                draggedItem.style.transform = '';
+                draggedItem.style.position = '';
+                draggedItem.style.zIndex = '';
+                draggedItem.style.top = '';
+                draggedItem.style.width = '';
+
                 const afterElement = placeholder.nextElementSibling;
                 if (afterElement) {
                     sortableList.insertBefore(draggedItem, afterElement);
