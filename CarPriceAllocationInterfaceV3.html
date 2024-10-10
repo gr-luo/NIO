@@ -284,7 +284,7 @@
             </div>
             <div id="bps-dimensions"></div>
             <div class="button-container">
-                <button class="back-button" onclick="goBack('brand-product-service-page')">返回上一步</button>
+                <button class="back-button" onclick="goBack('brand-product-service-page')">返回</button>
                 <button id="continue-to-sorting" class="continue-button">继续</button>
             </div>
         </div>
@@ -298,7 +298,7 @@
             </div>
             <ul id="sortable-dimensions" class="sortable-list"></ul>
             <div class="button-container">
-                <button class="back-button" onclick="goBack('sorting-page')">返回上一步</button>
+                <button class="back-button" onclick="goBack('sorting-page')">返回</button>
                 <button id="continue-to-allocation" class="continue-button">继续</button>
             </div>
         </div>
@@ -310,7 +310,7 @@
             </div>
             <div id="dimensions"></div>
             <div class="button-container">
-                <button class="back-button" onclick="goBack('allocation-page')">返回上一步</button>
+                <button class="back-button" onclick="goBack('allocation-page')">返回</button>
                 <button id="finish-allocation" class="continue-button">完成</button>
             </div>
         </div>
@@ -356,9 +356,9 @@
         let allocations = new Array(dimensions.length).fill(0);
 
         let bpsDimensions = [
-            { name: "品牌", description: "..." },
-            { name: "产品", description: "..." },
-            { name: "服务", description: "..." }
+            { name: "品牌体验", description: "品牌档次/调性/口碑/知名度等" },
+            { name: "产品体验", description: "车辆设计/空间/安全/驾乘/智能体验等" },
+            { name: "服务体验", description: "售前/售后服务体系、权益等" }
         ];
         let bpsAllocations = new Array(bpsDimensions.length).fill(0);
 
@@ -852,7 +852,7 @@
         // 添加完成分配的点击事件
         document.getElementById('finish-allocation').addEventListener('click', function() {
             // 这里可以添加完成分配后的逻辑，比如显示结果或发送数据到服务器
-            alert('谢谢填写！');
+            alert('感谢填写！');
         });
 
     </script>
