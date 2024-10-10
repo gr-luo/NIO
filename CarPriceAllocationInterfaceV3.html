@@ -129,20 +129,30 @@
         }
         .slider-tick {
             width: 1px;
-            height: 5px;
-            background-color: rgba(0, 0, 0, 0.2);
+            height: 3px;
+            background-color: rgba(0, 0, 0, 0.103);
         }
         .slider-value {
             position: absolute;
-            font-weight: bold;
             left: 10px;
             top: 50%;
             transform: translateY(-50%);
-            color: #0b2422db;
             font-size: 0.8em;
             pointer-events: none;
             z-index: 3;
         }
+
+        .slider-value-percentage {
+            font-weight: bold;
+            color: #0b2422db;
+        }
+
+        .slider-value-amount {
+            color: #00000073;
+            font-size: 0.9em;
+            margin-left: 4px;
+        }
+
         #allocation-page {
             display: none;
         }
@@ -223,11 +233,6 @@
         .highlight {
             color: #00BEBE;
             font-weight: bold;
-            // 可以添加其他样式,如:
-            // text-decoration: underline;
-            // background-color: #e6ffff;
-            // padding: 0 3px;
-            // border-radius: 3px;
         }
         .adjust-button {
             width: 24px;
@@ -325,7 +330,7 @@
         let dimensions = [
             {
                 name: "外观设计 & 外部功能件",
-                description: "造型、颜色、装饰件 、功能件（雨刮/大灯/把手等）"
+                description: "造型、颜色、装饰件 、功能件（雨刮/��灯/把手等）"
             },
             {
                 name: "驾驶 & 乘坐体验",
@@ -480,7 +485,7 @@
                     sliderRemaining.style.width = `${remaining}%`;
                     if (value > 0) {
                         const actualValue = (value / 100 * totalPrice).toFixed(1);
-                        sliderValue.textContent = `${value}%｜${actualValue}万`;
+                        sliderValue.innerHTML = `<span class="slider-value-percentage">${value}%</span><span class="slider-value-amount">｜${actualValue}万</span>`;
                         sliderValue.style.display = 'block';
                     } else {
                         sliderValue.style.display = 'none';
@@ -806,7 +811,7 @@
                     sliderRemaining.style.width = `${remaining}%`;
                     if (value > 0) {
                         const actualValue = (value / 100 * productValue).toFixed(1);
-                        sliderValue.textContent = `${value}%｜${actualValue}万`;
+                        sliderValue.innerHTML = `<span class="slider-value-percentage">${value}%</span><span class="slider-value-amount">｜${actualValue}万</span>`;
                         sliderValue.style.display = 'block';
                     } else {
                         sliderValue.style.display = 'none';
