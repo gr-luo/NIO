@@ -139,7 +139,7 @@
             top: 50%;
             transform: translateY(-50%);
             color: #ffffff;
-            font-size: 12px;
+            font-size: 0.8em;
             pointer-events: none;
             z-index: 3;
         }
@@ -280,7 +280,7 @@
             <h1>购买 <span id="selected-model-bps"></span> 时，你认为这台车在</h1>
             <h1>品牌、产品、服务的价值占比分别是</h1>
             <div class="allocation-info">
-                剩余可分配比例：<span class="highlight" id="remaining-bps">100</span>%
+                按 <span id="total-price">30</span> 万进行分配，剩余可分配比例：<span class="highlight" id="remaining-bps">100</span>%
             </div>
             <div id="bps-dimensions"></div>
             <div class="button-container">
@@ -291,8 +291,8 @@
 
         <!-- 新增排序页面 -->
         <div id="sorting-page" style="display: none;">
-            <h1>对于这辆车的所有产品维度</h1>
-            <h1>你认为以下哪些<span class="highlight">价值更高</span>（愿意支付更多费用）？</h1>
+            <h1>购车时，对于以下产品维度</h1>
+            <h1>你认为哪些<span class="highlight">价值更高</span>（愿意支付更多费用）</h1>
             <div class="allocation-info">
                 拖动进行从高到低排序
             </div>
@@ -306,7 +306,7 @@
         <div id="allocation-page" style="display: none;">
             <h1>你认为 <span id="selected-model"></span> 在以下产品各个维度的价值占比分别是</h1>
             <div class="allocation-info">
-                剩余可分配比例：<span class="highlight" id="remaining">100</span>%
+                按 <span id="product-value"></span> 万产品价值进行分配，剩余可分配比例：<span class="highlight" id="remaining">100</span>%
             </div>
             <div id="dimensions"></div>
             <div class="button-container">
@@ -353,12 +353,13 @@
         ];
 
         let totalPrice = 30;
+        let productValue = 0;
         let allocations = new Array(dimensions.length).fill(0);
 
         let bpsDimensions = [
-            { name: "品牌体验", description: "品牌档次/调性/口碑/知名度等" },
-            { name: "产品体验", description: "车辆设计/空间/安全/驾乘/智能体验等" },
-            { name: "服务体验", description: "售前/售后服务体系、权益等" }
+            { name: "品牌价值", description: "品牌档次/调性/口碑/知名度等" },
+            { name: "产品价值", description: "车辆设计/空间/安全/驾乘/智能体验等" },
+            { name: "服务价值", description: "售前/售后服务体系、权益等" }
         ];
         let bpsAllocations = new Array(bpsDimensions.length).fill(0);
 
@@ -393,6 +394,7 @@
                 document.getElementById('brand-product-service-page').style.display = 'block';
                 document.getElementById('selected-model-bps').textContent = model;
                 document.getElementById('selected-model').textContent = model;
+                document.getElementById('total-price').textContent = totalPrice;
                 renderBPSDimensions();
             });
         });
@@ -472,7 +474,8 @@
                     sliderRemaining.style.left = `${value}%`;
                     sliderRemaining.style.width = `${remaining}%`;
                     if (value > 0) {
-                        sliderValue.textContent = `${value}%`;
+                        const actualValue = (value / 100 * totalPrice).toFixed(2);
+                        sliderValue.textContent = `${value}%｜${actualValue}万`;
                         sliderValue.style.display = 'block';
                     } else {
                         sliderValue.style.display = 'none';
@@ -502,6 +505,10 @@
             if (continueButton) {
                 continueButton.disabled = remaining > 0;
             }
+
+            // 更新产品价值
+            productValue = (bpsAllocations[1] / 100 * totalPrice).toFixed(2);
+            document.getElementById('product-value').textContent = productValue;
         }
 
         function handleBPSSliderStart(event, index) {
@@ -708,6 +715,9 @@
                 .map(item => parseInt(item.dataset.index));
             dimensions = newOrder.map(index => dimensions[index]);
             
+            // 重置分配值
+            allocations = new Array(dimensions.length).fill(0);
+            
             // 切换到分配页面
             document.getElementById('sorting-page').style.display = 'none';
             document.getElementById('allocation-page').style.display = 'block';
@@ -757,6 +767,7 @@
                     plusButton.addEventListener('click', () => adjustAllocation(index, 1));
                 }
             });
+            updateAllocations(); // 确保更新分配状态
         }
 
         function adjustAllocation(index, change) {
@@ -789,7 +800,8 @@
                     sliderRemaining.style.left = `${value}%`;
                     sliderRemaining.style.width = `${remaining}%`;
                     if (value > 0) {
-                        sliderValue.textContent = `${value}%`;
+                        const actualValue = (value / 100 * productValue).toFixed(2);
+                        sliderValue.textContent = `${value}%｜${actualValue}万`;
                         sliderValue.style.display = 'block';
                     } else {
                         sliderValue.style.display = 'none';
@@ -806,13 +818,11 @@
 
             document.getElementById('remaining').textContent = remaining;
 
-            const allAllocated = remaining === 0;
-            dimensions.forEach((_, index) => {
-                const slider = document.getElementById(`slider-${index}`);
-                if (slider) {
-                    slider.style.accentColor = allAllocated ? 'green' : 'red';
-                }
-            });
+            // 启用或禁用完成按钮
+            const finishButton = document.getElementById('finish-allocation');
+            if (finishButton) {
+                finishButton.disabled = remaining > 0;
+            }
         }
 
         function handleSliderStart(event, index) {
