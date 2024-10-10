@@ -138,7 +138,7 @@
             left: 10px;
             top: 50%;
             transform: translateY(-50%);
-            color: #ffffff;
+            color: #0b2422db;
             font-size: 0.8em;
             pointer-events: none;
             z-index: 3;
@@ -223,6 +223,11 @@
         .highlight {
             color: #00BEBE;
             font-weight: bold;
+            // 可以添加其他样式,如:
+            // text-decoration: underline;
+            // background-color: #e6ffff;
+            // padding: 0 3px;
+            // border-radius: 3px;
         }
         .adjust-button {
             width: 24px;
@@ -280,7 +285,7 @@
             <h1>购买 <span id="selected-model-bps"></span> 时，你认为这台车在</h1>
             <h1>品牌、产品、服务的价值占比分别是</h1>
             <div class="allocation-info">
-                按 <span id="total-price">30</span> 万进行分配，剩余可分配比例：<span class="highlight" id="remaining-bps">100</span>%
+                按 <span id="total-price" class="highlight"></span> 万进行分配，剩余可分配比例：<span class="highlight" id="remaining-bps">100</span>%
             </div>
             <div id="bps-dimensions"></div>
             <div class="button-container">
@@ -306,7 +311,7 @@
         <div id="allocation-page" style="display: none;">
             <h1>你认为 <span id="selected-model"></span> 在以下产品各个维度的价值占比分别是</h1>
             <div class="allocation-info">
-                按 <span id="product-value"></span> 万产品价值进行分配，剩余可分配比例：<span class="highlight" id="remaining">100</span>%
+                按 <span id="product-value" class="highlight"></span> 万产品价值进行分配，剩余可分配比例：<span class="highlight" id="remaining">100</span>%
             </div>
             <div id="dimensions"></div>
             <div class="button-container">
@@ -474,7 +479,7 @@
                     sliderRemaining.style.left = `${value}%`;
                     sliderRemaining.style.width = `${remaining}%`;
                     if (value > 0) {
-                        const actualValue = (value / 100 * totalPrice).toFixed(2);
+                        const actualValue = (value / 100 * totalPrice).toFixed(1);
                         sliderValue.textContent = `${value}%｜${actualValue}万`;
                         sliderValue.style.display = 'block';
                     } else {
@@ -507,7 +512,7 @@
             }
 
             // 更新产品价值
-            productValue = (bpsAllocations[1] / 100 * totalPrice).toFixed(2);
+            productValue = (bpsAllocations[1] / 100 * totalPrice).toFixed(1);
             document.getElementById('product-value').textContent = productValue;
         }
 
@@ -800,7 +805,7 @@
                     sliderRemaining.style.left = `${value}%`;
                     sliderRemaining.style.width = `${remaining}%`;
                     if (value > 0) {
-                        const actualValue = (value / 100 * productValue).toFixed(2);
+                        const actualValue = (value / 100 * productValue).toFixed(1);
                         sliderValue.textContent = `${value}%｜${actualValue}万`;
                         sliderValue.style.display = 'block';
                     } else {
